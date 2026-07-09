@@ -98,6 +98,7 @@ bool     gStaUp = false;
 static float fftRe[FFT_N], fftIm[FFT_N];
 bool     gOtaReboot = false;
 uint32_t gOtaRebootAt = 0;
+uint32_t gLoopCount = 0, gLoopRate = 0, gLoopT = 0;   // licznik petli/s
 
 // --- pamięć trwała (NVS) ---
 uint32_t gHigh   = 0;     // rekord w Snake
@@ -213,6 +214,11 @@ String statsJson() {
   s += "\"tasks\":" + String((uint32_t)uxTaskGetNumberOfTasks()) + ",";
   s += "\"rssi\":" + String(gStaUp ? WiFi.RSSI() : 0) + ",";
   s += "\"apClients\":" + String(WiFi.softAPgetStationNum()) + ",";
+  s += "\"maxBlock\":" + String((uint32_t)ESP.getMaxAllocHeap()) + ",";
+  s += "\"sketchUsed\":" + String((uint32_t)ESP.getSketchSize()) + ",";
+  s += "\"sketchTotal\":" + String((uint32_t)(ESP.getSketchSize() + ESP.getFreeSketchSpace())) + ",";
+  s += "\"loopRate\":" + String(gLoopRate) + ",";
+  s += "\"chan\":" + String(WiFi.channel()) + ",";
   s += "\"staUp\":" + String(gStaUp ? "true" : "false");
   s += "}";
   return s;
@@ -256,6 +262,23 @@ String benchJson() {
   if (src) free(src);
   if (dst) free(dst);
 
+  float psramMBs = 0;                              // przepustowosc PSRAM (jesli jest)
+  if (psramFound()) {
+    const size_t PB = 256 * 1024;
+    uint8_t* ps  = (uint8_t*)ps_malloc(PB);
+    uint8_t* ps2 = (uint8_t*)ps_malloc(PB);
+    if (ps && ps2) {
+      memset(ps, 0x5A, PB);
+      const int R = 64;
+      uint32_t tp = micros();
+      for (int i = 0; i < R; i++) memcpy(ps2, ps, PB);
+      uint32_t dtp = micros() - tp; if (dtp == 0) dtp = 1;
+      psramMBs = (float)((double)R * PB / 1048576.0 / (dtp / 1000000.0));
+    }
+    if (ps)  free(ps);
+    if (ps2) free(ps2);
+  }
+
   if (tInt == 0) tInt = 1;
   if (tFlt == 0) tFlt = 1;
   float intMips    = (float)N_INT * 2.0f / tInt;      // 2 operacje/iterację, /us => M/s
@@ -266,6 +289,7 @@ String benchJson() {
   s += "\"intMips\":" + String(intMips, 0) + ",";
   s += "\"floatMflops\":" + String(floatMflops, 1) + ",";
   s += "\"memMBs\":" + String(memMBs, 0) + ",";
+  s += "\"psramMBs\":" + String(psramMBs, 0) + ",";
   s += "\"ms\":" + String((tInt + tFlt) / 1000);
   s += "}";
   return s;
@@ -436,24 +460,7 @@ void handleScope() {
 }
 
 /* ---- OTA: aktualizacja firmware przez przegladarke (wbudowane Update.h) ---- */
-void handleOtaReply() {
-  bool ok = !Update.hasError();
-  server.sendHeader("Connection", "close");
-  server.send(200, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
-  if (ok) { gOtaReboot = true; gOtaRebootAt = millis() + 900; }
-}
-void handleOtaUpload() {
-  HTTPUpload& up = server.upload();
-  if (up.status == UPLOAD_FILE_START) {
-    Serial.printf("OTA start: %s\n", up.filename.c_str());
-    if (!Update.begin(UPDATE_SIZE_UNKNOWN)) Update.printError(Serial);
-  } else if (up.status == UPLOAD_FILE_WRITE) {
-    if (Update.write(up.buf, up.currentSize) != up.currentSize) Update.printError(Serial);
-  } else if (up.status == UPLOAD_FILE_END) {
-    if (Update.end(true)) Serial.printf("OTA OK: %u B\n", up.totalSize);
-    else Update.printError(Serial);
-  }
-}
+// (lokalny OTA z pliku usuniety — jedyna sciezka aktualizacji to OTA z GitHub)
 
 /* ---- OTA z GitHub: pobiera skompilowany .bin z repo i flashuje ---- */
 String ghBase() { return "https://raw.githubusercontent.com/" + String(GH_OWNER) + "/" + String(GH_REPO) + "/" + String(GH_BRANCH) + "/"; }
@@ -569,7 +576,6 @@ void setup() {
   server.on("/api/fft",   handleFft);
   server.on("/api/fftbench", handleFftBench);
   server.on("/api/scope", handleScope);
-  server.on("/api/ota",   HTTP_POST, handleOtaReply, handleOtaUpload);
   server.on("/api/ghcheck",  handleGhCheck);
   server.on("/api/ghupdate", handleGhUpdate);
   server.on("/api/wifi", HTTP_GET,  handleWifiGet);
@@ -605,6 +611,8 @@ void setup() {
 }
 
 void loop() {
+  gLoopCount++;
+  if (millis() - gLoopT >= 1000) { gLoopRate = gLoopCount; gLoopCount = 0; gLoopT = millis(); }
   dns.processNextRequest();
   server.handleClient();
 #ifdef EOS_RGB_PIN

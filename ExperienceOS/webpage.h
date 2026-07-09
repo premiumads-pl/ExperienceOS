@@ -120,9 +120,13 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:22px 0 8px}
     <div class="meter" id="m_psram"><div class="lab"><span>PSRAM</span><span class="v" id="l_psram">–</span></div><div class="track f-mg"><i id="b_psram"></i></div></div>
     <div class="meter"><div class="lab"><span>Temperatura SoC</span><span class="v" id="l_temp">–</span></div><div class="track f-am"><i id="b_temp"></i></div></div>
     <div class="meter"><div class="lab"><span id="lab_link">Sygnał / klienci</span><span class="v" id="l_link">–</span></div><div class="track f-cy"><i id="b_link"></i></div></div>
-    <div class="row" style="margin-top:12px;font-size:12px;color:var(--dim)">
+    <div class="meter"><div class="lab"><span>Flash (aplikacja)</span><span class="v" id="l_flash">–</span></div><div class="track f-mg"><i id="b_flash"></i></div></div>
+    <div class="row" style="margin-top:12px;font-size:12px;color:var(--dim);gap:6px 16px">
       <span>Zadania FreeRTOS: <b style="color:var(--tx)" id="l_tasks">–</b></span>
       <span>Min. wolny heap: <b style="color:var(--tx)" id="l_minheap">–</b></span>
+      <span>Największy blok: <b style="color:var(--tx)" id="l_maxblk">–</b></span>
+      <span>Pętli/s: <b style="color:var(--tx)" id="l_loop">–</b></span>
+      <span>Kanał WiFi: <b style="color:var(--tx)" id="l_chan">–</b></span>
     </div>
   </section>
 
@@ -157,10 +161,11 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:22px 0 8px}
   <section class="panel c6">
     <h2><span class="dot"></span>CPU BENCHMARK</h2>
     <div class="row"><button id="benchBtn">▶ Uruchom benchmark</button><span id="benchMsg" style="font-size:12px;color:var(--dim)"></span></div>
-    <div class="bres">
+    <div class="bres" style="grid-template-columns:repeat(2,1fr)">
       <div class="bcard"><div class="n" id="r_int">–</div><div class="u">MIPS · integer</div></div>
       <div class="bcard"><div class="n" id="r_flt">–</div><div class="u">MFLOPS · float</div></div>
-      <div class="bcard"><div class="n" id="r_mem">–</div><div class="u">MB/s · memcpy</div></div>
+      <div class="bcard"><div class="n" id="r_mem">–</div><div class="u">MB/s · RAM memcpy</div></div>
+      <div class="bcard"><div class="n" id="r_psram">–</div><div class="u">MB/s · PSRAM</div></div>
     </div>
   </section>
 
@@ -244,18 +249,6 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:22px 0 8px}
     </div>
   </section>
 
-  <!-- OTA -->
-  <section class="panel c6">
-    <h2><span class="dot"></span>OTA UPDATE · firmware przez WiFi</h2>
-    <p style="font-size:12px;color:var(--dim);margin-bottom:12px">Wgraj nowy firmware (plik <b>.bin</b> z „Sketch → Export Compiled Binary" w Arduino IDE) bez podłączania kabla. Adres: <b style="color:var(--cy)">experienceos.local</b></p>
-    <div class="row">
-      <input type="file" id="otaFile" accept=".bin">
-      <button id="otaBtn">⬆ Wgraj</button>
-    </div>
-    <div class="track f-cy" style="margin-top:14px"><i id="otaBar"></i></div>
-    <p id="otaMsg" style="font-size:12px;color:var(--dim);margin-top:8px"></p>
-  </section>
-
   <!-- WIFI -->
   <section class="panel c6">
     <h2><span class="dot"></span>SIEĆ WiFi · połącz z internetem</h2>
@@ -322,6 +315,7 @@ function buildAch(){
   const g=$('#achGrid');g.innerHTML='';
   for(const k in ACH){
     if(!INFO.rgb && (k==='led'||k==='rainbow')) continue;   // ukryj nieosiągalne bez diody
+    if(k==='ota') continue;                                 // lokalny OTA usunięty (zostaje GitHub)
     const[ic,ti,su]=ACH[k];
     g.insertAdjacentHTML('beforeend',
       `<div class="badge" data-k="${k}"><div class="ic">${ic}</div><div class="t">${ti}<small>${su}</small></div></div>`);
@@ -383,6 +377,10 @@ async function tick(){
   else{setBar('#b_link',Math.min(100,s.apClients*25));$('#l_link').textContent=s.apClients+' podłączonych';$('#lab_link').textContent='Klienci AP';}
   $('#l_tasks').textContent=s.tasks;
   $('#l_minheap').textContent=bytes(s.heapMin);
+  if(s.sketchTotal){setBar('#b_flash',s.sketchUsed/s.sketchTotal*100);$('#l_flash').textContent=bytes(s.sketchUsed)+' / '+bytes(s.sketchTotal);}
+  if(s.maxBlock!=null)$('#l_maxblk').textContent=bytes(s.maxBlock);
+  if(s.loopRate!=null)$('#l_loop').textContent=s.loopRate.toLocaleString('pl-PL');
+  if(s.chan!=null)$('#l_chan').textContent=s.chan;
   $('#uptime').textContent=fmtUp(s.up);
   const nowMs=performance.now();
   if(nowMs-chartLastPush>=500){chartLastPush=nowMs;chartSample(s.heapFree,s.temp);drawChart();}   // probka + rysowanie 2 Hz
@@ -443,7 +441,7 @@ $$('.win').forEach(b=>b.addEventListener('click',()=>{chartWin=+b.dataset.w;$$('
 $('#benchBtn').addEventListener('click',async()=>{
   const b=$('#benchBtn');b.disabled=true;$('#benchMsg').textContent='liczę na krzemie...';
   try{const r=await j('/api/bench');
-    animateNum('#r_int',r.intMips,0);animateNum('#r_flt',r.floatMflops,1);animateNum('#r_mem',r.memMBs,0);
+    animateNum('#r_int',r.intMips,0);animateNum('#r_flt',r.floatMflops,1);animateNum('#r_mem',r.memMBs,0);animateNum('#r_psram',r.psramMBs||0,0);
     $('#benchMsg').textContent='gotowe w '+r.ms+' ms';unlock('bench');
   }catch(e){$('#benchMsg').textContent='błąd';}
   b.disabled=false;
@@ -641,20 +639,6 @@ function drawScope(d){
 }
 $('#scRun').addEventListener('click',scToggle);
 
-/* ---------- OTA UPDATE ---------- */
-$('#otaBtn').addEventListener('click',()=>{
-  const f=$('#otaFile').files[0],msg=$('#otaMsg'),bar=$('#otaBar');
-  if(!f){msg.textContent='najpierw wybierz plik .bin';return;}
-  const fd=new FormData();fd.append('firmware',f,f.name);
-  const xhr=new XMLHttpRequest();xhr.open('POST','/api/ota');
-  xhr.upload.onprogress=e=>{if(e.lengthComputable){const p=Math.round(e.loaded/e.total*100);bar.style.width=p+'%';msg.textContent='wysyłanie '+p+'%';}};
-  xhr.onload=()=>{try{const r=JSON.parse(xhr.responseText);
-    if(r.ok){bar.style.width='100%';msg.textContent='✓ wgrane — ESP restartuje się, połącz się ponownie za chwilę';unlock('ota');}
-    else msg.textContent='✗ błąd aktualizacji (zły plik?)';}catch(e){msg.textContent='✗ błąd odpowiedzi';}};
-  xhr.onerror=()=>{msg.textContent='✗ błąd połączenia';};
-  msg.textContent='wysyłanie...';xhr.send(fd);
-});
-
 /* ---------- GITHUB UPDATE (OTA z repo) ---------- */
 async function ghCheck(){const m=$('#ghMsg');m.textContent='sprawdzam repo...';
   try{const d=await j('/api/ghcheck');if(d.current)$('#ghCur').textContent=d.current;
@@ -712,7 +696,7 @@ async function boot(){
   for(let i=0;i<steps.length;i++){st.textContent=steps[i];bar.style.width=((i+1)/steps.length*100)+'%';await new Promise(r=>setTimeout(r,260));}
   try{INFO=await j('/api/info');}catch(e){INFO={model:'ESP32-S3',rev:0,cores:2,cpuMax:240,flash:0,psram:0,mac:'?',apIp:'192.168.4.1',staIp:'',staUp:false,sdk:'?',rgb:false};}
   renderInfo();buildAch();
-  try{const a=await j('/api/ach');unlocked=new Set(a.unlocked);$('#gHigh').textContent=a.high;}catch(e){}
+  try{const a=await j('/api/ach');unlocked=new Set(a.unlocked);renderAch();$('#gHigh').textContent=a.high;}catch(e){}
   await unlock('boot');await unlock('explorer');
   initBg();gInit();
   try{drawGauge(0,50);}catch(e){}
