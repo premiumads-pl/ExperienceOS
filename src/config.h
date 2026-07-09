@@ -1,5 +1,11 @@
 #pragma once
 
+#if __has_include("fw_version.h")
+  #include "fw_version.h"
+#else
+  #define FW_VERSION "0.1-dev"
+#endif
+
 // ── WiFi Access Point ──────────────────────────────────────────────
 #define AP_SSID       "ExperienceOS"
 #define AP_PASSWORD   ""          // open AP for easy phone access
