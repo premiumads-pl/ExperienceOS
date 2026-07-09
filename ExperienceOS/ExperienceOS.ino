@@ -467,7 +467,8 @@ String ghBase() { return "https://raw.githubusercontent.com/" + String(GH_OWNER)
 bool   ghConfigured() { return strlen(GH_OWNER) > 0 && strlen(GH_REPO) > 0; }
 
 void handleGhCheck() {
-  String url = ghBase() + GH_VER_PATH, remote = "";
+  String url = ghBase() + GH_VER_PATH + "?nc=" + String(millis());   // ?nc: omija cache CDN GitHuba
+  String remote = "";
   int code = 0;
   if (ghConfigured() && gStaUp) {
     WiFiClientSecure c; c.setInsecure();
@@ -493,7 +494,7 @@ void handleGhUpdate() {
     server.send(200, "application/json", "{\"ok\":false,\"msg\":\"brak konfiguracji GitHub lub internetu (STA)\"}");
     return;
   }
-  String url = ghBase() + GH_FW_PATH;
+  String url = ghBase() + GH_FW_PATH + "?nc=" + String(millis());   // ?nc: omija cache CDN GitHuba
   Serial.println("[GH] pobieram firmware: " + url);
   WiFiClientSecure c; c.setInsecure();
   httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);   // GitHub potrafi przekierowac
