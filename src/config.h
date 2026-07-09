@@ -6,6 +6,21 @@
   #define FW_VERSION "0.1-dev"
 #endif
 
+#if __has_include("secrets.h")
+  #include "secrets.h"
+#endif
+#ifndef STA_SSID
+  #define STA_SSID     ""
+  #define STA_PASSWORD ""
+#endif
+
+// ── GitHub OTA ───────────────────────────────────────────────────
+#define GH_OWNER    "premiumads-pl"
+#define GH_REPO     "ExperienceOS"
+#define GH_BRANCH   "main"
+#define GH_FW_PATH  "firmware/firmware.bin"
+#define GH_VER_PATH "firmware/version.txt"
+
 // ── WiFi Access Point ──────────────────────────────────────────────
 #define AP_SSID       "ExperienceOS"
 #define AP_PASSWORD   ""          // open AP for easy phone access
