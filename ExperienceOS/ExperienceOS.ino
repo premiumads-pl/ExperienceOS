@@ -98,7 +98,6 @@ bool     gStaUp = false;
 static float fftRe[FFT_N], fftIm[FFT_N];
 bool     gOtaReboot = false;
 uint32_t gOtaRebootAt = 0;
-volatile bool gGhUpdate = false;
 
 // --- pamięć trwała (NVS) ---
 uint32_t gHigh   = 0;     // rekord w Snake
@@ -487,20 +486,22 @@ void handleGhUpdate() {
     server.send(200, "application/json", "{\"ok\":false,\"msg\":\"brak konfiguracji GitHub lub internetu (STA)\"}");
     return;
   }
-  server.send(200, "application/json", "{\"ok\":true}");   // odpowiedz, zanim zablokujemy sie na pobieraniu
-  gGhUpdate = true;
-}
-
-void doGithubUpdate() {                              // wolane z loop() po wyslaniu odpowiedzi
   String url = ghBase() + GH_FW_PATH;
   Serial.println("[GH] pobieram firmware: " + url);
   WiFiClientSecure c; c.setInsecure();
+  httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);   // GitHub potrafi przekierowac
   httpUpdate.rebootOnUpdate(true);
-  t_httpUpdate_return r = httpUpdate.update(c, url);  // blokuje; przy sukcesie restart nastepuje sam
-  if (r == HTTP_UPDATE_FAILED)
-    Serial.printf("[GH] BLAD %d: %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
-  else if (r == HTTP_UPDATE_NO_UPDATES)
-    Serial.println("[GH] brak zmian");
+  httpUpdate.onProgress([](int cur, int total) {                 // podglad na Serial
+    if (total) Serial.printf("[GH] %d%%\n", cur * 100 / total);
+  });
+  t_httpUpdate_return r = httpUpdate.update(c, url);   // blokuje; przy SUKCESIE ESP restartuje sie sam (bez odpowiedzi)
+  // tu dojdziemy tylko przy bledzie:
+  String msg;
+  if (r == HTTP_UPDATE_FAILED)          msg = String("BLAD ") + httpUpdate.getLastError() + ": " + httpUpdate.getLastErrorString();
+  else if (r == HTTP_UPDATE_NO_UPDATES) msg = "serwer nie zwrocil firmware (zly URL / brak pliku?)";
+  else                                  msg = "nieznany wynik OTA";
+  Serial.println("[GH] " + msg);
+  server.send(200, "application/json", "{\"ok\":false,\"msg\":\"" + msg + "\"}");
 }
 
 /* ---- WiFi z panelu (zapis w NVS, bez hasel w kodzie/repo) ---- */
@@ -610,7 +611,6 @@ void loop() {
   updateLed();
 #endif
   if (gOtaReboot && millis() > gOtaRebootAt) { Serial.println("OTA -> restart"); ESP.restart(); }
-  if (gGhUpdate) { gGhUpdate = false; doGithubUpdate(); }
   if (!gStaUp && WiFi.status() == WL_CONNECTED) {    // niebokujace wykrycie polaczenia STA
     gStaUp = true; gStaIp = WiFi.localIP().toString();
     MDNS.end(); MDNS.begin("experienceos"); MDNS.addService("http", "tcp", 80);   // rozglos .local w sieci domowej

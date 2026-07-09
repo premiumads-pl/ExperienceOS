@@ -665,9 +665,15 @@ async function ghCheck(){const m=$('#ghMsg');m.textContent='sprawdzam repo...';
                            : ('✓ masz najnowszą wersję ('+d.current+')');
   }catch(e){m.textContent='błąd sprawdzania';}}
 async function ghUpdate(){const m=$('#ghMsg');
-  m.textContent='pobieram firmware z GitHub i flashuję — ESP zrestartuje się, połącz ponownie za chwilę...';
-  try{const d=await j('/api/ghupdate');if(!d.ok)m.textContent='✗ '+(d.msg||'błąd');else unlock('github');}
-  catch(e){m.textContent='ESP pobiera i restartuje się — połącz ponownie za chwilę';unlock('github');}}
+  m.textContent='pobieram firmware z GitHub i flashuję — to potrwa ~10–30 s, nie zamykaj strony...';
+  try{
+    const s=await fetchT('/api/ghupdate',{cache:'no-store'},45000);
+    const d=await s.json();
+    if(d.ok){m.textContent='OK';unlock('github');}
+    else{m.textContent='✗ OTA nie powiodło się: '+(d.msg||'błąd');}
+  }catch(e){
+    m.textContent='✓ ESP zrestartował się na nową wersję — połącz ponownie za chwilę';unlock('github');
+  }}
 $('#ghCheck').addEventListener('click',ghCheck);
 $('#ghUpd').addEventListener('click',ghUpdate);
 
