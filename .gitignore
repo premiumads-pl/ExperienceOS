@@ -1,0 +1,20 @@
+# --- Sekrety (nie trafiaja do repo) ---
+ExperienceOS/secrets.h
+
+# --- Generowane przez GitHub Actions (numer wersji buildu) ---
+ExperienceOS/fw_version.h
+
+# --- Artefakty kompilacji Arduino / arduino-cli ---
+build/
+*.elf
+*.map
+*.hex
+# uwaga: firmware/firmware.bin JEST commitowany przez CI, wiec go nie ignorujemy
+
+# --- System / edytory ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~

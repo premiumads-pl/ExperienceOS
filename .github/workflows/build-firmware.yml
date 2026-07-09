@@ -1,0 +1,69 @@
+# GitHub Actions — kompiluje firmware ExperienceOS przy kazdym pushu i publikuje
+# firmware/firmware.bin + firmware/version.txt, ktore ESP32-S3 pobiera przez OTA.
+#
+# Cykl pracy: piszesz kod -> git push -> CI kompiluje .bin i podbija wersje ->
+# na urzadzeniu klikasz "Sprawdz wersje" i "Aktualizuj z GitHub".
+#
+# WYMAGANIA (jednorazowo w repo na GitHub):
+#   Settings -> Actions -> General -> Workflow permissions -> "Read and write permissions".
+
+name: build-firmware
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ExperienceOS/**'
+      - '.github/workflows/build-firmware.yml'
+  workflow_dispatch:            # pozwala uruchomic recznie z zakladki Actions
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Zainstaluj Arduino CLI
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Zainstaluj rdzen ESP32
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+
+      - name: Ustal wersje i wygeneruj naglowek
+        run: |
+          VERSION="${{ github.run_number }}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "#define FW_VERSION \"$VERSION\"" > ExperienceOS/fw_version.h
+          mkdir -p firmware
+          echo "$VERSION" > firmware/version.txt
+          echo "Buduje firmware w wersji $VERSION"
+
+      - name: Kompiluj szkic
+        run: |
+          # WAZNE: FQBN i PartitionScheme powinny odpowiadac temu, co wybierasz w Arduino IDE,
+          # zeby obraz OTA byl zgodny z ukladem partycji na plytce.
+          arduino-cli compile \
+            --fqbn "esp32:esp32:esp32s3:PartitionScheme=min_spiffs,PSRAM=enabled" \
+            --output-dir build \
+            ExperienceOS
+
+      - name: Skopiuj firmware do folderu firmware/
+        run: |
+          cp build/ExperienceOS.ino.bin firmware/firmware.bin
+          ls -la firmware
+
+      - name: Opublikuj firmware w repo
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add firmware/firmware.bin firmware/version.txt
+          git commit -m "CI: firmware v${VERSION} [skip ci]" || { echo "brak zmian do zapisania"; exit 0; }
+          git push
