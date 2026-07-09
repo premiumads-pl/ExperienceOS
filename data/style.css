@@ -1,0 +1,365 @@
+:root {
+  --bg: #0a0e17;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: #1e293b;
+  --accent: #3b82f6;
+  --accent-glow: #60a5fa;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #eab308;
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 0 16px 32px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+header {
+  text-align: center;
+  padding: 32px 0 16px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 28px;
+  color: var(--accent-glow);
+  filter: drop-shadow(0 0 8px var(--accent));
+}
+
+h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--accent-glow);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.card-header h2 { margin-bottom: 0; }
+
+/* Info Grid */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.info-item {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.info-item .label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.info-item .value {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mono { font-family: var(--mono); font-size: 12px !important; }
+
+.feature-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.badge.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--accent);
+  color: var(--accent-glow);
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover { background: var(--accent-glow); }
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Progress */
+.progress-bar {
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+/* Score */
+.score-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--surface2);
+  border-radius: 8px;
+}
+
+.score-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.score-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.score-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), #4ade80);
+  border-radius: 4px;
+  width: 0%;
+  transition: width 0.6s ease;
+}
+
+.score-pct {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--green);
+  min-width: 48px;
+  text-align: right;
+}
+
+/* Results */
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.result-item {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--border);
+}
+
+.result-item.pass { border-left-color: var(--green); }
+.result-item.fail { border-left-color: var(--red); }
+
+.result-name {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.result-value {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.result-detail {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+
+/* GPIO Board */
+.hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.board-container {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+  aspect-ratio: 0.55;
+}
+
+.board-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.board-body {
+  fill: var(--surface2);
+  stroke: var(--border);
+  stroke-width: 2;
+  rx: 12;
+}
+
+.pin-dot {
+  cursor: pointer;
+  transition: fill 0.2s, r 0.2s;
+}
+
+.pin-dot:hover { r: 7; }
+.pin-dot.selected { fill: var(--accent-glow) !important; }
+
+.pin-dot.cap-adc { fill: #22c55e; }
+.pin-dot.cap-touch { fill: #a855f7; }
+.pin-dot.cap-usb { fill: #f59e0b; }
+.pin-dot.cap-octal { fill: #64748b; }
+.pin-dot.cap-strapping { fill: #ef4444; }
+.pin-dot.cap-default { fill: #3b82f6; }
+
+.pin-label {
+  font-size: 8px;
+  fill: var(--text-dim);
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.chip-label {
+  font-size: 11px;
+  fill: var(--text-dim);
+  text-anchor: middle;
+  font-weight: 600;
+}
+
+/* Pin Detail */
+.pin-detail {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--surface2);
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+}
+
+.pin-detail h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: var(--accent-glow);
+}
+
+.pin-caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cap-tag {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid var(--accent);
+  color: var(--accent-glow);
+}
+
+.cap-tag.off {
+  opacity: 0.3;
+  border-color: var(--border);
+  color: var(--text-dim);
+  background: transparent;
+}
+
+.pin-label-text {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.hidden { display: none !important; }
+
+footer {
+  text-align: center;
+  padding: 24px 0;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+/* Canvas */
+#bench-chart {
+  width: 100%;
+  border-radius: 8px;
+  background: var(--surface2);
+}

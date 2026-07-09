@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ExperienceOS Diagnostics</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <span class="logo-icon">◈</span>
+      <h1>ExperienceOS</h1>
+    </div>
+    <p class="subtitle">Hardware Explorer</p>
+  </header>
+
+  <main>
+    <!-- System Info -->
+    <section id="sysinfo" class="card">
+      <h2>System</h2>
+      <div class="info-grid" id="info-grid">
+        <div class="info-item"><span class="label">Board</span><span class="value" id="i-board">—</span></div>
+        <div class="info-item"><span class="label">CPU</span><span class="value" id="i-cpu">—</span></div>
+        <div class="info-item"><span class="label">Flash</span><span class="value" id="i-flash">—</span></div>
+        <div class="info-item"><span class="label">PSRAM</span><span class="value" id="i-psram">—</span></div>
+        <div class="info-item"><span class="label">Heap</span><span class="value" id="i-heap">—</span></div>
+        <div class="info-item"><span class="label">MAC</span><span class="value mono" id="i-mac">—</span></div>
+        <div class="info-item"><span class="label">SDK</span><span class="value mono" id="i-sdk">—</span></div>
+        <div class="info-item"><span class="label">Chip ID</span><span class="value mono" id="i-chipid">—</span></div>
+      </div>
+      <div class="feature-badges" id="feature-badges"></div>
+    </section>
+
+    <!-- Diagnostics -->
+    <section id="diagnostics" class="card">
+      <div class="card-header">
+        <h2>Diagnostics</h2>
+        <button id="btn-run" class="btn-primary">Run Diagnostics</button>
+      </div>
+      <div id="progress-wrap" class="hidden">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <p class="progress-label" id="progress-label">Ready</p>
+      </div>
+      <div id="score-wrap" class="hidden">
+        <div class="score-display">
+          <span class="score-label">Experience Score</span>
+          <div class="score-bar-wrap">
+            <div class="score-bar" id="score-bar"></div>
+          </div>
+          <span class="score-pct" id="score-pct">0%</span>
+        </div>
+      </div>
+      <div id="results-grid" class="results-grid"></div>
+    </section>
+
+    <!-- GPIO Pin Map -->
+    <section id="pinmap" class="card">
+      <h2>GPIO Explorer</h2>
+      <p class="hint">Tap a pin to see capabilities</p>
+      <div id="board-svg" class="board-container"></div>
+      <div id="pin-detail" class="pin-detail hidden">
+        <h3 id="pin-title">GPIO —</h3>
+        <div id="pin-caps" class="pin-caps"></div>
+        <p id="pin-label" class="pin-label-text"></p>
+      </div>
+    </section>
+
+    <!-- Benchmarks Chart -->
+    <section id="benchmarks" class="card hidden">
+      <h2>Benchmarks</h2>
+      <canvas id="bench-chart" height="200"></canvas>
+    </section>
+  </main>
+
+  <footer>
+    <p>ExperienceOS v0.1 — Hardware Explorer</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
