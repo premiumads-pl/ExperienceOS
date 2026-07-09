@@ -52,3 +52,9 @@ Mechanizm jak wcześniej: CI buduje `.bin`, urządzenie pobiera z `raw.githubuse
 ## Struktura repo
 `platformio.ini`, `src/` (main, web, api, diagnostics, config, gpio_map), `data/` (LittleFS: index.html,
 app.js, style.css), `briefs/` (briefy Claude), `.github/workflows/` (CI PlatformIO + OTA).
+
+## Toolchain (WAŻNE)
+PlatformIO jest w LOKALNYM venv projektu — NIE globalnie. Używaj:
+`source .venv/bin/activate && pio ...`  albo bezpośrednio `.venv/bin/pio ...`.
+Wersja: PlatformIO Core 6.1.19. Typowe: `.venv/bin/pio run -e esp32s3` (build),
+`-t upload` (wgranie firmware), `-t uploadfs` (wgranie LittleFS z data/), `-t monitor` (Serial).
