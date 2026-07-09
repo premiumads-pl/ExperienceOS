@@ -1,6 +1,7 @@
 #include "api.h"
 #include "diagnostics.h"
 #include "gpio_map.h"
+#include "ota.h"
 #include <ArduinoJson.h>
 
 static void sendJson(AsyncWebServerRequest* req, JsonDocument& doc) {
@@ -94,5 +95,40 @@ void setupApiRoutes(AsyncWebServer& server) {
             doc["label"]     = pin->label;
         }
         sendJson(req, doc);
+    });
+
+    // OTA status
+    server.on("/api/ota/status", HTTP_GET, [](AsyncWebServerRequest* req) {
+        JsonDocument doc;
+
+        const char* stateStr = "idle";
+        switch (otaGetState()) {
+            case OtaState::CHECKING: stateStr = "checking"; break;
+            case OtaState::UPDATING: stateStr = "updating"; break;
+            default: break;
+        }
+
+        doc["state"]       = stateStr;
+        doc["current"]     = otaCurrentVer();
+        doc["remote"]      = otaRemoteVer();
+        doc["updateAvail"] = otaUpdateAvail();
+        doc["online"]      = otaStaOnline();
+        doc["configured"]  = otaStaConfigured();
+        doc["httpCode"]    = otaHttpCode();
+        doc["msg"]         = otaMsg();
+
+        sendJson(req, doc);
+    });
+
+    // OTA check (async — only sets flag)
+    server.on("/api/ota/check", HTTP_POST, [](AsyncWebServerRequest* req) {
+        otaRequestCheck();
+        req->send(200, "application/json", "{\"ok\":true}");
+    });
+
+    // OTA update (async — only sets flag)
+    server.on("/api/ota/update", HTTP_POST, [](AsyncWebServerRequest* req) {
+        otaRequestUpdate();
+        req->send(200, "application/json", "{\"ok\":true}");
     });
 }
